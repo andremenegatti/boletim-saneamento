@@ -1,15 +1,15 @@
 library(tidyverse)
 library(tmap)
 library(cagedExplorer)
+source('geom_flat_violin.R')
 
 # Loading and filtering dataset -----------------------------------------------
 snis <- readRDS('snis-2018-clean.rds')
 
 snis_agua <- snis %>% 
-  filter(
-    !(municipio_clean %in% c('MAUA', 'SALTO', 'SANTA MARIA DA SERRA') &
-        tipo_servico == 'Esgotos')
-  )
+  filter(!(municipio_clean %in% 
+             c('MAUA', 'SALTO', 'SANTA MARIA DA SERRA') &
+        tipo_servico == 'Esgotos'))
 
 # Custom map theme and settings -----------------------------------------------
 theme_set(custom_theme())
@@ -25,26 +25,26 @@ custom_map_settings <-
   tm_legend(legend.position = c(0.01,0.08)) +
   tm_borders(col = "black", lwd = 0.3)
 
-# Mapa: natureza jurídica -----------------------------------------------------
-mapa_agua_nat_jur <- snis_agua %>% 
-  rename(`Natureza jurídica` = nat_jur_simplified) %>% 
+# Mapa: tipo de prestador -----------------------------------------------------
+mapa_agua_tipo <- snis_agua %>% 
+  rename(`Tipo de prestador` = nat_jur_simplified) %>% 
   add_geometry_municipios() %>% 
   tm_shape() +
   tm_style("beaver") +
   tm_fill(
-    'Natureza jurídica',
+    'Tipo de prestador',
     palette = c('#fed976', '#fb6a4a', '#225ea8', '#bdbdbd'),
     alpha = 1,
     id = "municipio_clean"
     ) +
-  tm_layout(main.title = 'Natureza jurídica do prestador de serviços - Água') +
-  custom_map_settings ; mapa_agua_nat_jur
+  tm_layout(main.title = 'Tipo do prestador de serviços - Água') +
+  custom_map_settings ; mapa_agua_tipo
 
 # Saving
-tmap_save(mapa_agua_nat_jur, height = 6, width = 6,
-          filename = 'mapa_natureza_juridica_agua.png')
+tmap_save(mapa_agua_tipo, height = 6, width = 6,
+          filename = 'plots/agua/mapa-tipo-prestador-agua.png')
 
-# Barplot: natureza jurídica  -------------------------------------------------
+# Barplot: tipo de prestador  -------------------------------------------------
 # Data wrangling
 snis_agua_barplot <- snis_agua %>% 
   mutate(natureza_juridica = 
@@ -64,7 +64,7 @@ snis_agua_barplot <- snis_agua %>%
          )
 
 # Plotting
-barplot_nat_jur <- ggplot(snis_agua_barplot) +
+barplot_tipo <- ggplot(snis_agua_barplot) +
   geom_bar(aes(x = nat_jur_simplified, fill = natureza_juridica),
            col = 'gray25') +
   scale_fill_manual(values = c('#fed976', '#ffffcc', '#fcbba1',
@@ -77,15 +77,15 @@ barplot_nat_jur <- ggplot(snis_agua_barplot) +
         axis.text.x = element_text(angle = 45, hjust = 1),
         legend.title = element_blank()) +
   labs(
-    x = 'Natureza jurídica',
+    x = 'Tipo de prestador de serviços',
     y = 'Número de municípios',
     title = 'Fornecimento de água em SP',
-    subtitle = 'Natureza jurídica dos prestadores de serviço'
-  ) ; barplot_nat_jur
+    subtitle = 'Por tipo de prestador de serviço'
+  ) ; barplot_tipo
 
 # Saving
-ggsave(plot = barplot_nat_jur, width = 6, height = 7,
-       filename = 'barplot-fornecimento-agua.png')
+ggsave(plot = barplot_tipo, width = 6, height = 7,
+       filename = 'plots/agua/barplot-fornecimento-agua.png')
 
 # Histograma: indice atendimento de agua --------------------------------------
 hist_atend_agua <- ggplot(snis_agua) +
@@ -104,7 +104,7 @@ hist_atend_agua <- ggplot(snis_agua) +
 
 # Saving
 ggsave(plot = hist_atend_agua, width = 6, height = 6,
-       filename = 'histogram-indice-atendimento-agua.png')
+       filename = 'plots/agua/histogram-indice-atendimento-agua.png')
 
 # Mapa: índice de atendimento -------------------------------------------------
 mapa_atendimento_agua <- snis_agua %>% 
@@ -133,7 +133,7 @@ mapa_atendimento_agua <- snis_agua %>%
 
 # Saving
 tmap_save(mapa_atendimento_agua, height = 6, width = 6,
-          filename = 'mapa_atendimento_agua.png')
+          filename = 'plots/agua/mapa-atendimento-agua.png')
 
 # Mapa: tarifa de água --------------------------------------------------------
 mapa_tarifa_agua <- snis_agua %>% 
@@ -164,7 +164,7 @@ mapa_tarifa_agua <- snis_agua %>%
 
 # Saving
 tmap_save(mapa_tarifa_agua,  height = 6, width = 6,
-          filename = 'mapa_tarifa_media_agua.png')
+          filename = 'plots/agua/mapa-tarifa-media-agua.png')
 
 # Mapa: tarifa média (água + esgoto) ------------------------------------------
 mapa_tarifa_media <- snis_agua %>% 
@@ -195,8 +195,7 @@ mapa_tarifa_media <- snis_agua %>%
 
 # Saving
 tmap_save(mapa_tarifa_media,  height = 6, width = 6,
-          filename = 'mapa_tarifa_media_agua_e_esgoto.png')
-
+          filename = 'plots/mapa-tarifa-media-agua-e-esgoto.png')
 
 # Mapa: investimento per capita -----------------------------------------------
 # Data wrangling
@@ -243,7 +242,7 @@ mapa_investimento_per_capita <- snis_inv %>%
 
 # Saving
 tmap_save(mapa_investimento_per_capita, width = 6, height = 6,
-          filename = 'mapa_investimento_total_per_capita.png')
+          filename = 'plots/mapa-investimento-total-per-capita.png')
 
 # Mapa: indicador de desempenho financeiro ------------------------------------
 mapa_desempenho_financeiro <- snis_inv %>% 
@@ -269,11 +268,188 @@ mapa_desempenho_financeiro <- snis_inv %>%
     colorNA = '#fff7bc'
     ) +
   tm_layout(main.title = 
-      'Investimento per capita - Água e Esgoto - Municípios paulistas') + 
+      'Indicador de desempenho financeiro - Municípios paulistas') + 
   custom_map_settings ; mapa_desempenho_financeiro
 
 # Saving
 tmap_save(mapa_desempenho_financeiro, width = 6, height = 6,
-          filename = 'mapa_desempenho_financeiro.png')
+          filename = 'plots/mapa-desempenho-financeiro.png')
 
-snis_agua %>% glimpse()
+# Boxplot: atendimento água ---------------------------------------------------
+# Data wrangling
+snis_boxplot_atendimento <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified) %>% 
+           fct_reorder(.x = in055_indice_de_atendimento_total_de_agua,
+                       .fun = median, na.rm=TRUE))
+
+summary_table_atendimento <- snis_boxplot_atendimento %>% 
+  group_by(nat_jur_simplified) %>% 
+  summarise(Mediana = median(in055_indice_de_atendimento_total_de_agua,
+                             na.rm = TRUE)) %>% 
+  mutate(Label = round(Mediana, 2) %>% str_replace('\\.', ','))
+
+# Plotting
+boxplot_atendimento_agua <- ggplot(snis_boxplot_tarifa) +
+  geom_flat_violin(aes(x = nat_jur_simplified,
+                       y = in055_indice_de_atendimento_total_de_agua,
+                       fill = nat_jur_simplified),
+                   alpha = 0.5) +
+  geom_boxplot(aes(x = nat_jur_simplified,
+                   y = in055_indice_de_atendimento_total_de_agua),
+               width = 0.1, outlier.alpha = 0.3) +
+  geom_text(data = summary_table_atendimento,
+            aes(x = nat_jur_simplified,
+                y = Mediana, label = Label),
+            size = 3, nudge_x = 0.17, family = 'serif') +
+  scale_x_discrete(labels = c('Adm. Pública',
+                              'Soc. de Econ. Mista',
+                              'Empresa Privada')) +
+  scale_fill_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  theme(legend.position = 'none', panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = 'Tipo de prestador de serviços',
+    y = 'Percentual da população atendida',
+    title = 'Distribuição dos índices municip. de atendimento (água)',
+    subtitle = 'Comparação entre diferentes tipos de prestadores de serviços'
+  ) ; boxplot_atendimento_agua
+
+# Saving
+ggsave(plot = boxplot_atendimento_agua, width = 5, height = 5.5,
+       filename = 'plots/agua/boxplot-atendimento-agua.png')
+
+# Boxplot: tarifa água --------------------------------------------------------
+# Data wrangling
+snis_boxplot_tarifa <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified) %>% 
+           fct_reorder(.x = in005_tarifa_media_de_agua,
+                       .fun = median, na.rm=TRUE))
+
+summary_table_tarifa <- snis_boxplot_tarifa %>% 
+  group_by(nat_jur_simplified) %>% 
+  summarise(Mediana = median(in005_tarifa_media_de_agua,
+                             na.rm = TRUE)) %>% 
+  mutate(Label = round(Mediana, 2) %>% str_replace('\\.', ','))
+
+# Plotting
+boxplot_tarifa_agua <- ggplot(snis_boxplot_tarifa) +
+  geom_flat_violin(aes(x = nat_jur_simplified,
+                       y = in005_tarifa_media_de_agua,
+                       fill = nat_jur_simplified),
+                   alpha = 0.5) +
+  geom_boxplot(aes(x = nat_jur_simplified,
+                   y = in005_tarifa_media_de_agua),
+               width = 0.1, outlier.alpha = 0.3) +
+  geom_text(data = summary_table_tarifa,
+            aes(x = nat_jur_simplified,
+                y = Mediana, label = Label),
+            size = 3, nudge_x = 0.17, family = 'serif') +
+  scale_x_discrete(labels = c('Adm. Pública',
+                              'Soc. de Econ. Mista',
+                              'Empresa Privada')) +
+  scale_fill_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  theme(legend.position = 'none', panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = 'Tipo de prestador de serviços',
+    y = 'Tarifa média do fornecimento de água (R$/m3)',
+    title = 'Distribuição das médias municipais da tarifa de água',
+    subtitle = 'Comparação entre diferentes tipos de prestadores de serviços'
+  ) ; boxplot_tarifa_agua
+
+# Saving
+ggsave(plot = boxplot_tarifa_agua, width = 5, height = 5.5,
+       filename = 'plots/agua/boxplot-tarifa-agua.png')
+
+# Boxplot: tarifa água + esgoto -----------------------------------------------
+# Data wrangling
+snis_boxplot_tarifa_total <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified) %>% 
+           fct_reorder(.x = in004_tarifa_media_praticada,
+                       .fun = median, na.rm=TRUE))
+
+summary_table_tarifa_total <- snis_boxplot_tarifa_total %>% 
+  group_by(nat_jur_simplified) %>% 
+  summarise(Mediana = median(in004_tarifa_media_praticada,
+                             na.rm = TRUE)) %>% 
+  mutate(Label = round(Mediana, 2) %>% str_replace('\\.', ','))
+
+# Plotting
+boxplot_tarifa_total <- ggplot(snis_boxplot_tarifa) +
+  geom_flat_violin(aes(x = nat_jur_simplified,
+                       y = in004_tarifa_media_praticada,
+                       fill = nat_jur_simplified),
+                   alpha = 0.5) +
+  geom_boxplot(aes(x = nat_jur_simplified,
+                   y = in004_tarifa_media_praticada),
+               width = 0.1, outlier.alpha = 0.3) +
+  geom_text(data = summary_table_tarifa_total,
+            aes(x = nat_jur_simplified,
+                y = Mediana, label = Label),
+            size = 3, nudge_x = 0.17, family = 'serif') +
+  scale_x_discrete(labels = c('Adm. Pública',
+                              'Soc. de Econ. Mista',
+                              'Empresa Privada')) +
+  scale_fill_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  theme(legend.position = 'none', panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = 'Tipo de prestador de serviços',
+    y = 'Tarifa média (R$/m3)',
+    title = 'Distribuição das médias municipais da tarifa (água e esg.)',
+    subtitle = 'Comparação entre diferentes tipos de prestadores de serviços'
+  ) ; boxplot_tarifa_total
+
+# Saving
+ggsave(plot = boxplot_tarifa_total, width = 5, height = 5.5,
+       filename = 'plots/boxplot-tarifa-agua-e-esgoto.png')
+
+# Boxplot: investimento per capita -----------------------------------------------
+# Data wrangling
+snis_boxplot_inv <- snis_inv %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified) %>% 
+           fct_reorder(.x = `Inv. per capita (R$)`,
+                       .fun = median, na.rm=TRUE)) %>% 
+  mutate(`Inv. per capita (R$)` = `Inv. per capita (R$)` + 0.01)
+
+summary_table_inv <- snis_boxplot_inv %>% 
+  group_by(nat_jur_simplified) %>% 
+  summarise(Mediana = median(`Inv. per capita (R$)`,
+                             na.rm = TRUE)) %>% 
+  mutate(Label = round(Mediana, 2) %>% str_replace('\\.', ','))
+
+# Plotting
+boxplot_inv <- ggplot(snis_boxplot_inv) +
+  geom_flat_violin(aes(x = nat_jur_simplified,
+                       y = `Inv. per capita (R$)`,
+                       fill = nat_jur_simplified),
+                   alpha = 0.5) +
+  geom_boxplot(aes(x = nat_jur_simplified,
+                   y = `Inv. per capita (R$)`),
+               width = 0.03, outlier.alpha = 0.3) +
+  geom_text(data = summary_table_inv,
+            aes(x = nat_jur_simplified,
+                y = Mediana, label = Label),
+            size = 3, nudge_x = 0.17, family = 'serif') +
+  scale_x_discrete(labels = c('Adm. Pública',
+                              'Soc. de Econ. Mista',
+                              'Empresa Privada')) +
+  scale_y_log10(breaks = c(0.01, 1, 2, 5, 30, 100, 500, 1000),
+                labels = c(0, 1, 2, 5, 30 , 100, 500, 1000)) +
+  scale_fill_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  theme(legend.position = 'none', panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = 'Tipo de prestador de serviços',
+    y = 'Investimento per capita em R$ (escala log.)',
+    title = 'Distribuição do total de investimentos na rede',
+    subtitle = 'Comparação entre diferentes tipos de prestadores de serviços'
+  ) ; boxplot_inv
+
+# Saving
+ggsave(plot = boxplot_inv, width = 5, height = 5.5,
+       filename = 'plots/boxplot-investimento.png')
