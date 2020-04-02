@@ -11,6 +11,18 @@ snis_agua <- snis %>%
              c('MAUA', 'SALTO', 'SANTA MARIA DA SERRA') &
         tipo_servico == 'Esgotos'))
 
+# Joining GDP data ------------------------------------------------------------
+snis_agua <- snis_agua %>% 
+  left_join(readxl::read_excel('pib-municipios-2017.xlsx') %>% 
+              select(Codmun7 = codigo, pib2017 = pib) %>% 
+              mutate(Codmun7 = as.integer(Codmun7)),
+            by = 'Codmun7') %>% 
+  left_join(readxl::read_excel('estimativa-populacao-municipios-2017.xlsx') %>%
+              select(Codmun7, pop2017) %>% 
+              mutate(Codmun7 = as.integer(Codmun7)),
+            by = 'Codmun7') %>% 
+  mutate(pib_per_capita2017 = pib2017 / pop2017) # In thousands of BRL
+
 # Custom map theme and settings -----------------------------------------------
 theme_set(custom_theme())
 
@@ -453,3 +465,197 @@ boxplot_inv <- ggplot(snis_boxplot_inv) +
 # Saving
 ggsave(plot = boxplot_inv, width = 5, height = 5.5,
        filename = 'plots/boxplot-investimento.png')
+
+
+# Scatterplot: tarifa vs. atendimento: single plot ----------------------------
+scatterplot_tarifa_atendimento <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified)) %>% 
+  ggplot() +
+  geom_point(aes(x = in055_indice_de_atendimento_total_de_agua,
+                 y = in005_tarifa_media_de_agua,
+                 col = nat_jur_simplified,
+                 size = pop), alpha = 0.5) +
+  geom_smooth(aes(x = in055_indice_de_atendimento_total_de_agua,
+                  y = in005_tarifa_media_de_agua),
+              method = 'lm', col = 'gray25',
+              fill = 'lightgray', alpha = 0.5) +
+  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  scale_y_continuous(breaks = 0:6) +
+  theme(panel.grid = element_blank(), legend.position = 'bottom',
+        legend.title = element_blank()) +
+  guides(size = FALSE) +
+  labs(
+    x = 'Índice de atendimento de água',
+    y = 'Tarifa média de água',
+    title = 'Relação entre tarifa e índice de atendimento',
+    subtitle = 'Fornecimento de água nos municípios paulistas',
+    caption =
+      'Fonte: SNIS (2018)\nNota: o tamanho dos pontos é proporcional à população dos municípios.'
+  ); scatterplot_tarifa_atendimento
+
+ggsave(plot = scatterplot_tarifa_atendimento, width = 6, height = 6,
+       filename = 'plots/agua/scatterplot-tarifa-vs-atendimento-agua.png')
+
+# Scatterplot: tarifa vs. atendimento - faceted -------------------------------
+scatterplot_tarifa_atendimento_faceted <- scatterplot_tarifa_atendimento +
+  facet_wrap(~ nat_jur_simplified, nrow = 3) +
+  guides(size = FALSE, color = FALSE) ; scatterplot_tarifa_atendimento_faceted
+
+ggsave(plot = scatterplot_tarifa_atendimento_faceted, width = 6, height = 8,
+       filename = 'plots/agua/scatterplot-tarifa-vs-atendimento-agua-faceted.png')
+
+# Scatterplot: tarifa vs. PIB - single plot  ----------------------------------
+scatterplot_tarifa_pib <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified)) %>% 
+  ggplot(aes(x = pib2017, y = in005_tarifa_media_de_agua)) +
+  geom_point(aes(size = pop, col = nat_jur_simplified),
+             alpha = 0.4) +
+  geom_smooth(method = 'lm', col = 'gray25',
+              fill = 'lightgray', alpha = 0.5) +
+  scale_x_log10(breaks = c(1e+5, 1e+6, 1e+7, 1e+8, 700000000),
+                labels = c('100mi', '1bi', '10bi', '100bi', '700bi')) +
+  scale_y_continuous(breaks = 0:6) +
+  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  labs(
+    x = 'PIB (escala logarítmica)',
+    y = 'Tarifa média de água',
+    title = 'Relação entre tarifa e PIB',
+    subtitle = 'Fornecimento de água nos municípios paulistas',
+    caption =
+      'Fonte: dados tarifários do SNIS (2018); dados de PIB do IBGE (2017).\nNota: o tamanho dos pontos é proporcional à população dos municípios.'
+  ) +
+  guides(size = FALSE)  +
+  theme(panel.grid = element_blank(), legend.position = 'bottom',
+        legend.title = element_blank()); scatterplot_tarifa_pib
+
+# Saving
+ggsave(plot = scatterplot_tarifa_pib, width = 6, height = 6,
+       filename = 'plots/agua/scatterplot-tarifa-agua-vs-pib.png')
+
+# Scatterplot: tarifa vs. PIB - faceted  -------------------------------------
+scatterplot_tarifa_pib_faceted <- scatterplot_tarifa_pib +
+  facet_wrap(~ nat_jur_simplified, nrow = 3) +
+  guides(size = FALSE, color = FALSE) ; scatterplot_tarifa_pib_faceted
+
+# Saving
+ggsave(plot = scatterplot_tarifa_pib_faceted, width = 5, height = 8,
+       filename = 'plots/agua/scatterplot-tarifa-agua-vs-pib-faceted.png')
+
+# Scatterplot: tarifa vs. PIB per capita - single plot  -----------------------
+scatterplot_tarifa_pib_per_capita <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified)) %>% 
+  ggplot(aes(x = pib_per_capita2017, y = in005_tarifa_media_de_agua)) +
+  geom_point(aes(size = pop, col = nat_jur_simplified),
+             alpha = 0.4) +
+  geom_smooth(method = 'lm', col = 'gray25',
+              fill = 'lightgray', alpha = 0.5) +
+  scale_x_log10(breaks = c(10, 30, 100, 300),
+                labels = c('10 mil', '30 mil', '100 mil', '300 mil')) +
+  scale_y_continuous(breaks = 0:6) +
+  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  labs(
+    x = 'PIB per capita em reais (escala logarítmica)',
+    y = 'Tarifa média de água',
+    title = 'Relação entre tarifa e PIB per capita',
+    subtitle = 'Fornecimento de água nos municípios paulistas',
+    caption =
+      'Fonte: dados tarifários do SNIS (2018); dados de PIB e população do IBGE (2017).\nNota: o tamanho dos pontos é proporcional à população dos municípios.'
+  ) +
+  guides(size = FALSE)  +
+  theme(panel.grid = element_blank(), legend.position = 'bottom',
+        legend.title = element_blank()); scatterplot_tarifa_pib_per_capita
+
+# Saving
+ggsave(plot = scatterplot_tarifa_pib_per_capita, width = 6, height = 6,
+       filename = 'plots/agua/scatterplot-tarifa-agua-vs-pib-per-capita.png')
+
+# Scatterplot: tarifa vs. PIB per capita - faceted  ---------------------------
+scatterplot_tarifa_pib_per_capita_faceted <- 
+  scatterplot_tarifa_pib_per_capita +
+  facet_wrap(~ nat_jur_simplified, nrow = 3) +
+  guides(size = FALSE, color = FALSE) ; scatterplot_tarifa_pib_per_capita_faceted
+
+# Saving
+ggsave(plot = scatterplot_tarifa_pib_per_capita_faceted, width = 5, height = 8,
+       filename = 'plots/agua/scatterplot-tarifa-agua-vs-pib-per-capita-faceted.png')
+
+# Scatterplot: atendimento vs PIB - single plot -------------------------------
+scatterplot_atendimento_pib <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified)) %>% 
+  ggplot(aes(x = pib2017, y = in055_indice_de_atendimento_total_de_agua)) +
+  geom_point(aes(size = pop, col = nat_jur_simplified),
+             alpha = 0.4) +
+  geom_smooth(method = 'lm', col = 'gray25',
+              fill = 'lightgray', alpha = 0.5) +
+  scale_x_log10(breaks = c(1e+5, 1e+6, 1e+7, 1e+8, 700000000),
+                labels = c('100mi', '1bi', '10bi', '100bi', '700bi')) +
+  coord_cartesian(ylim = c(20, 100)) +
+  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  labs(
+    x = 'PIB (escala logarítmica)',
+    y = 'Índice de atendimento',
+    title = 'Relação entre índice de atendimento de água e PIB',
+    subtitle = 'Fornecimento de água nos municípios paulistas',
+    caption =
+      'Fonte: dados de atendimento do SNIS (2018); dados de PIB do IBGE (2017).\nNota: o tamanho dos pontos é proporcional à população dos municípios.'
+  ) +
+  guides(size = FALSE) +
+  theme(panel.grid = element_blank(), legend.title = element_blank(),
+        legend.position = 'bottom') ; scatterplot_atendimento_pib
+
+ggsave(plot = scatterplot_atendimento_pib, width = 6, height = 6,
+       filename = 'plots/agua/scatterplot-atendimento-agua-vs-pib.png')
+
+# Scatterplot: atendimento vs. PIB - faceted  -------------------------------------
+scatterplot_atendimento_pib_faceted <- scatterplot_atendimento_pib +
+  scale_y_continuous(breaks = seq(0, 100, by = 20)) +
+  coord_cartesian() +
+  facet_wrap(~ nat_jur_simplified, nrow = 3, scales = 'free_y') +
+  guides(size = FALSE, color = FALSE) ; scatterplot_atendimento_pib_faceted
+
+# Saving
+ggsave(plot = scatterplot_atendimento_pib_faceted, width = 5, height = 8,
+       filename = 'plots/agua/scatterplot-atendimento-agua-vs-pib-faceted.png')
+
+# Scatterplot: atendimento vs PIB per capita - single plot --------------------
+scatterplot_atendimento_pib_per_capita <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified)) %>% 
+  ggplot(aes(x = pib_per_capita2017, y = in055_indice_de_atendimento_total_de_agua)) +
+  geom_point(aes(size = pop, col = nat_jur_simplified),
+             alpha = 0.4) +
+  geom_smooth(method = 'lm', col = 'gray25',
+              fill = 'lightgray', alpha = 0.5) +
+  scale_x_log10(breaks = c(10, 30, 100, 300),
+                labels = c('10 mil', '30 mil', '100 mil', '300 mil')) +
+  coord_cartesian(ylim = c(20, 100)) +
+  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  labs(
+    x = 'PIB per capita em reais (escala logarítmica)',
+    y = 'Índice de atendimento',
+    title = 'Relação entre índice de atendimento de água e PIB per capita',
+    subtitle = 'Fornecimento de água nos municípios paulistas',
+    caption =
+      'Fonte: dados de atendimento do SNIS (2018); dados de PIB e população do IBGE (2017).\nNota: o tamanho dos pontos é proporcional à população dos municípios.'
+  ) +
+  guides(size = FALSE) +
+  theme(panel.grid = element_blank(), legend.title = element_blank(),
+        legend.position = 'bottom') ; scatterplot_atendimento_pib_per_capita
+
+ggsave(plot = scatterplot_atendimento_pib_per_capita, width = 6, height = 6,
+       filename = 'plots/agua/scatterplot-atendimento-agua-vs-pib-per-capita.png')
+
+# Scatterplot: atendimento vs. PIB per capita - faceted  -------------------------------------
+scatterplot_atendimento_pib_per_capita_faceted <- scatterplot_atendimento_pib_per_capita +
+  scale_y_continuous(breaks = seq(0, 100, by = 20)) +
+  coord_cartesian() +
+  facet_wrap(~ nat_jur_simplified, nrow = 3, scales = 'free_y') +
+  guides(size = FALSE, color = FALSE) ; scatterplot_atendimento_pib_per_capita_faceted
+
+# Saving
+ggsave(plot = scatterplot_atendimento_pib_faceted, width = 5, height = 8,
+       filename = 'plots/agua/scatterplot-atendimento-agua-vs-pib-per-capita-faceted.png')
