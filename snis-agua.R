@@ -480,7 +480,7 @@ scatterplot_tarifa_atendimento <- snis_agua %>%
                   y = in005_tarifa_media_de_agua),
               method = 'lm', col = 'gray25',
               fill = 'lightgray', alpha = 0.5) +
-  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  scale_color_manual(values = c('#fed976', '#fb6a4a', '#225ea8')) +
   scale_y_continuous(breaks = 0:6) +
   theme(panel.grid = element_blank(), legend.position = 'bottom',
         legend.title = element_blank()) +
@@ -517,7 +517,7 @@ scatterplot_tarifa_pib <- snis_agua %>%
   scale_x_log10(breaks = c(1e+5, 1e+6, 1e+7, 1e+8, 700000000),
                 labels = c('100mi', '1bi', '10bi', '100bi', '700bi')) +
   scale_y_continuous(breaks = 0:6) +
-  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  scale_color_manual(values = c('#fed976', '#fb6a4a', '#225ea8')) +
   labs(
     x = 'PIB (escala logarítmica)',
     y = 'Tarifa média de água',
@@ -555,7 +555,7 @@ scatterplot_tarifa_pib_per_capita <- snis_agua %>%
   scale_x_log10(breaks = c(10, 30, 100, 300),
                 labels = c('10 mil', '30 mil', '100 mil', '300 mil')) +
   scale_y_continuous(breaks = 0:6) +
-  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  scale_color_manual(values = c('#fed976', '#fb6a4a', '#225ea8')) +
   labs(
     x = 'PIB per capita em reais (escala logarítmica)',
     y = 'Tarifa média de água',
@@ -594,7 +594,7 @@ scatterplot_atendimento_pib <- snis_agua %>%
   scale_x_log10(breaks = c(1e+5, 1e+6, 1e+7, 1e+8, 700000000),
                 labels = c('100mi', '1bi', '10bi', '100bi', '700bi')) +
   coord_cartesian(ylim = c(20, 100)) +
-  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  scale_color_manual(values = c('#fed976', '#fb6a4a', '#225ea8')) +
   labs(
     x = 'PIB (escala logarítmica)',
     y = 'Índice de atendimento',
@@ -633,7 +633,7 @@ scatterplot_atendimento_pib_per_capita <- snis_agua %>%
   scale_x_log10(breaks = c(10, 30, 100, 300),
                 labels = c('10 mil', '30 mil', '100 mil', '300 mil')) +
   coord_cartesian(ylim = c(20, 100)) +
-  scale_color_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  scale_color_manual(values = c('#fed976', '#fb6a4a', '#225ea8')) +
   labs(
     x = 'PIB per capita em reais (escala logarítmica)',
     y = 'Índice de atendimento',

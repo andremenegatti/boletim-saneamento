@@ -251,7 +251,7 @@ boxplot_tratamento_esgoto <- ggplot(snis_boxplot_tratamento) +
         axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(
     x = 'Tipo de prestador de serviços',
-    y = 'Tarifa média do serviço de esgotamento (R$/m3)',
+    y = 'Índice de tratamento de esgoto',
     title = 'Distribuição do índice de tratamento',
     subtitle = 'Comparação entre diferentes tipos de prestadores de serviços'
   ) ; boxplot_tratamento_esgoto
@@ -298,7 +298,7 @@ boxplot_coleta_esgoto <- ggplot(snis_boxplot_coleta) +
         axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(
     x = 'Tipo de prestador de serviços',
-    y = 'Tarifa média do serviço de esgotamento (R$/m3)',
+    y = 'Índice de coleta de esgoto',
     title = 'Distribuição do índice de coleta',
     subtitle = 'Comparação entre diferentes tipos de prestadores de serviços'
   ) ; boxplot_coleta_esgoto
