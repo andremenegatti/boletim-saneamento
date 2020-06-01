@@ -18,7 +18,7 @@ snis2 <- snis %>%
     starts_with('fn052'), starts_with('fn053'), starts_with('fn054'), starts_with('fn058'),
     # Índices
     starts_with('in003'), contains('_tarifa_media_'),
-    starts_with('in008'), starts_with('in012'),
+    starts_with('in008'), starts_with('in012'), starts_with('in013'),
     starts_with('in015'), starts_with('in016'),
     starts_with('in022'), starts_with('in024'),
     starts_with('in046'), starts_with('in047'),
@@ -56,4 +56,15 @@ snis4 <- snis3 %>%
                     'Empresa privada',
                     'Sem dados'))
 
-saveRDS(snis4, 'snis-2018-clean.rds')
+snis5 <- snis4 %>% 
+  left_join(readxl::read_excel('pib-municipios-2017.xlsx') %>% 
+              select(Codmun7 = codigo, pib2017 = pib) %>% 
+              mutate(Codmun7 = as.integer(Codmun7)),
+            by = 'Codmun7') %>% 
+  left_join(readxl::read_excel('estimativa-populacao-municipios-2017.xlsx') %>%
+              select(Codmun7, pop2017) %>% 
+              mutate(Codmun7 = as.integer(Codmun7)),
+            by = 'Codmun7') %>% 
+  mutate(pib_per_capita2017 = pib2017 / pop2017) # In thousands of BRL
+
+saveRDS(snis5, 'snis-2018-clean.rds')
