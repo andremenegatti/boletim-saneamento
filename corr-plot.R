@@ -1,7 +1,6 @@
 library(tidyverse)
 library(reshape2)
 library(cagedExplorer)
-source('geom_flat_violin.R')
 
 # Loading and filtering dataset -----------------------------------------------
 snis <- readRDS('snis-2018-clean.rds')
@@ -11,46 +10,40 @@ snis_agua <- snis %>%
              c('MAUA', 'SALTO', 'SANTA MARIA DA SERRA') &
              tipo_servico == 'Esgotos'))
 
+snis_esgoto <- snis %>% 
+  filter(!(municipio_clean %in% 
+             c('MAUA', 'SALTO', 'SANTA MARIA DA SERRA') &
+             tipo_servico == 'Água'))
+
 # Custom map theme and settings -----------------------------------------------
 theme_set(custom_theme())
 
-# Investimento per capita -----------------------------------------------
-snis_inv <- snis_agua %>% 
-  rename(inv_prest = 
-           fn033_investimentos_totais_realizados_pelo_prestador_de_servicos,
-         inv_est = fn058_investimentos_totais_realizados_pelo_estado,
-         inv_mun = fn048_investimentos_totais_realizados_pelo_municipio) %>% 
-  mutate(na_inv_prest = is.na(inv_prest),
-         na_inv_est = is.na(inv_est),
-         na_inv_mun = is.na(inv_mun)) %>% 
-  mutate_at(.vars = vars(inv_prest, inv_est, inv_mun),
-            .funs = function(x) ifelse(is.na(x), 0, x)) %>% 
-  mutate(inv_total = 
-           ifelse(na_inv_prest & na_inv_est & na_inv_mun,
-                  NA_real_,
-                  inv_prest + inv_est + inv_mun)) %>% 
-  mutate(inv_per_capita = inv_total / pop)
-
 # Subsetting: only relevant columns, with shorter names -----------------------
-snis_subset <- snis_agua %>% 
+# Water and 'overall' features
+snis_subset_agua <- snis_agua %>% 
   select(municipio_clean,
          tarifa_media = in004_tarifa_media_praticada,
          tarifa_media_agua = in005_tarifa_media_de_agua,
-         tarifa_media_esgoto = in006_tarifa_media_de_esgoto,
          perdas_agua = in013_indice_de_perdas_faturamento,
          atendimento_agua = in055_indice_de_atendimento_total_de_agua,
+         consumo_medio_per_capita_agua = in022_consumo_medio_percapita_de_agua,
+         investimento_per_capita = inv_per_capita,
+         desempenho_financeiro = in012_indicador_de_desempenho_financeiro
+  )
+
+# Sewage-related features
+snis_subset_esgoto <- snis_esgoto %>% 
+  select(municipio_clean,
+         tarifa_media_esgoto = in006_tarifa_media_de_esgoto,
          coleta_esgoto = in015_indice_de_coleta_de_esgoto,
          tratamento_esgoto = in016_indice_de_tratamento_de_esgoto,
-         consumo_medio_per_capita_agua = in022_consumo_medio_percapita_de_agua,
-         desempenho_financeiro = in012_indicador_de_desempenho_financeiro
-         ) %>% 
-  left_join(
-    snis_inv %>%
-      select(municipio_clean, investimento_per_capita = inv_per_capita),
-    by = 'municipio_clean'
-    )
+  )
 
-# Computing the correlation matrix
+# Concatenating partial datasets
+snis_subset <- snis_subset_agua %>% 
+  left_join(snis_subset_esgoto, by = 'municipio_clean')
+
+# Computing the correlation matrix --------------------------------------------
 corr_matrix <- snis_subset %>% 
   select(-municipio_clean) %>% 
   drop_na() %>% 

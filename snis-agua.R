@@ -11,31 +11,9 @@ snis_agua <- snis %>%
              c('MAUA', 'SALTO', 'SANTA MARIA DA SERRA') &
         tipo_servico == 'Esgotos'))
 
-# Joining GDP data ------------------------------------------------------------
-snis_agua <- snis_agua %>% 
-  left_join(readxl::read_excel('pib-municipios-2017.xlsx') %>% 
-              select(Codmun7 = codigo, pib2017 = pib) %>% 
-              mutate(Codmun7 = as.integer(Codmun7)),
-            by = 'Codmun7') %>% 
-  left_join(readxl::read_excel('estimativa-populacao-municipios-2017.xlsx') %>%
-              select(Codmun7, pop2017) %>% 
-              mutate(Codmun7 = as.integer(Codmun7)),
-            by = 'Codmun7') %>% 
-  mutate(pib_per_capita2017 = pib2017 / pop2017) # In thousands of BRL
-
 # Custom map theme and settings -----------------------------------------------
 theme_set(custom_theme())
-
-custom_map_settings <- 
-  tm_layout(main.title.size = 1.2, fontfamily = 'serif', scale = 1.1,
-            main.title.fontface = 'bold', bg.color = "white",
-            inner.margins = c(.1, .1, .1, .1)) +
-  tm_compass(north = 0, type = "8star",size = 2,
-             position = c("right", "bottom")) +
-  tm_scale_bar(text.size = 0.6, text.color = NA, lwd = 1,
-               color.dark = "black", color.light = "white") +
-  tm_legend(legend.position = c(0.01,0.08)) +
-  tm_borders(col = "black", lwd = 0.3)
+source('custom_map_settings.R')
 
 # Mapa: tipo de prestador -----------------------------------------------------
 mapa_agua_tipo <- snis_agua %>% 
