@@ -3,7 +3,7 @@ library(reshape2)
 library(cagedExplorer)
 
 # Loading and filtering dataset -----------------------------------------------
-snis <- readRDS('snis-2018-clean.rds')
+snis <- readRDS('data/snis-2018-clean.rds')
 
 snis_agua <- snis %>% 
   filter(!(municipio_clean %in% 
@@ -22,7 +22,6 @@ theme_set(custom_theme())
 # Water and 'overall' features
 snis_subset_agua <- snis_agua %>% 
   select(municipio_clean,
-         tarifa_media = in004_tarifa_media_praticada,
          tarifa_media_agua = in005_tarifa_media_de_agua,
          perdas_agua = in013_indice_de_perdas_faturamento,
          atendimento_agua = in055_indice_de_atendimento_total_de_agua,
@@ -93,12 +92,19 @@ corr_plot <-
         label = formatC(value, big.mark = '.', decimal.mark = ',')),
     color = "gray10", size = 3.25, family = 'serif'
     ) +
+  geom_text(
+    data = melted_cormat_pretty %>% filter(value > .8),
+    aes(x = Var2, y = Var1,
+        label = formatC(value, big.mark = '.', decimal.mark = ',')),
+    color = "gray90", size = 3.25, family = 'serif'
+  ) +
   scale_fill_gradient2(
-    low = '#053061', high  = '#b2182b', mid = 'white',
+    high = '#053061', low  = '#67000d', #'#b2182b',
+    mid = 'white',
     midpoint = 0, limit = c(-1, 1), space = 'Lab',
     name = "Coeficiente\nde correlação",
     label = function(x) formatC(x, big.mark = '.', decimal.mark = ',')
-    ) +
+  ) +
   coord_fixed() +
   theme_minimal() +
   theme(

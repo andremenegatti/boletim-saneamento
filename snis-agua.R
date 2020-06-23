@@ -4,12 +4,14 @@ library(cagedExplorer)
 source('geom_flat_violin.R')
 
 # Loading and filtering dataset -----------------------------------------------
-snis <- readRDS('snis-2018-clean.rds')
+snis <- readRDS('data/snis-2018-clean.rds')
 
 snis_agua <- snis %>% 
   filter(!(municipio_clean %in% 
              c('MAUA', 'SALTO', 'SANTA MARIA DA SERRA') &
         tipo_servico == 'Esgotos'))
+
+# saveRDS(snis_agua, 'data/snis-agua.rds')
 
 # Custom map theme and settings -----------------------------------------------
 theme_set(custom_theme())
@@ -280,7 +282,7 @@ summary_table_atendimento <- snis_boxplot_atendimento %>%
   mutate(Label = round(Mediana, 2) %>% str_replace('\\.', ','))
 
 # Plotting
-boxplot_atendimento_agua <- ggplot(snis_boxplot_tarifa) +
+boxplot_atendimento_agua <- ggplot(snis_boxplot_atendimento) +
   geom_flat_violin(aes(x = nat_jur_simplified,
                        y = in055_indice_de_atendimento_total_de_agua,
                        fill = nat_jur_simplified),
@@ -353,49 +355,48 @@ boxplot_tarifa_agua <- ggplot(snis_boxplot_tarifa) +
 ggsave(plot = boxplot_tarifa_agua, width = 5, height = 5.5,
        filename = 'plots/agua/boxplot-tarifa-agua.png')
 
-# Boxplot: tarifa água + esgoto -----------------------------------------------
+# Boxplot: desempenho financeiro ----------------------------------------------
 # Data wrangling
-snis_boxplot_tarifa_total <- snis_agua %>% 
+snis_boxplot_desempenho <- snis_agua %>% 
   filter(nat_jur_simplified != 'Sem dados') %>% 
   mutate(nat_jur_simplified = droplevels(nat_jur_simplified) %>% 
-           fct_reorder(.x = in004_tarifa_media_praticada,
+           fct_reorder(.x = in012_indicador_de_desempenho_financeiro,
                        .fun = median, na.rm=TRUE))
 
-summary_table_tarifa_total <- snis_boxplot_tarifa_total %>% 
+summary_table_desempenho <- snis_boxplot_desempenho %>% 
   group_by(nat_jur_simplified) %>% 
-  summarise(Mediana = median(in004_tarifa_media_praticada,
+  summarise(Mediana = median(in012_indicador_de_desempenho_financeiro,
                              na.rm = TRUE)) %>% 
   mutate(Label = round(Mediana, 2) %>% str_replace('\\.', ','))
 
 # Plotting
-boxplot_tarifa_total <- ggplot(snis_boxplot_tarifa) +
+boxplot_desempenho <- ggplot(snis_boxplot_desempenho) +
   geom_flat_violin(aes(x = nat_jur_simplified,
-                       y = in004_tarifa_media_praticada,
+                       y = in012_indicador_de_desempenho_financeiro,
                        fill = nat_jur_simplified),
                    alpha = 0.5) +
   geom_boxplot(aes(x = nat_jur_simplified,
-                   y = in004_tarifa_media_praticada),
+                   y = in012_indicador_de_desempenho_financeiro),
                width = 0.1, outlier.alpha = 0.3) +
-  geom_text(data = summary_table_tarifa_total,
+  geom_text(data = summary_table_desempenho,
             aes(x = nat_jur_simplified,
                 y = Mediana, label = Label),
             size = 3, nudge_x = 0.17, family = 'serif') +
-  scale_x_discrete(labels = c('Adm. Pública',
-                              'Soc. de Econ. Mista',
+  scale_x_discrete(labels = c('Soc. de Econ. Mista', 'Adm. Pública',
                               'Empresa Privada')) +
-  scale_fill_manual(values = c('#fb6a4a', '#fed976', '#225ea8')) +
+  scale_fill_manual(values = c('#fed976','#fb6a4a', '#225ea8')) +
   theme(legend.position = 'none', panel.grid = element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(
     x = 'Tipo de prestador de serviços',
-    y = 'Tarifa média (R$/m3)',
-    title = 'Distribuição das médias municipais da tarifa (água e esg.)',
+    y = 'Índice de desempenho financeiro',
+    title = 'Distribuição dos índices de desempenho',
     subtitle = 'Comparação entre diferentes tipos de prestadores de serviços'
-  ) ; boxplot_tarifa_total
+  ) ; boxplot_desempenho
 
 # Saving
-ggsave(plot = boxplot_tarifa_total, width = 5, height = 5.5,
-       filename = 'plots/boxplot-tarifa-agua-e-esgoto.png')
+ggsave(plot = boxplot_desempenho, width = 5, height = 5.5,
+       filename = 'plots/boxplot-desempenho.png')
 
 # Boxplot: investimento per capita -----------------------------------------------
 # Data wrangling
@@ -637,3 +638,77 @@ scatterplot_atendimento_pib_per_capita_faceted <- scatterplot_atendimento_pib_pe
 # Saving
 ggsave(plot = scatterplot_atendimento_pib_faceted, width = 5, height = 8,
        filename = 'plots/agua/scatterplot-atendimento-agua-vs-pib-per-capita-faceted.png')
+
+# Mapa: perdas de faturamento -------------------------------------------------
+mapa_perdas <- snis_agua %>% 
+  add_geometry_municipios() %>% 
+  rename(`Índice de perdas` =
+           in013_indice_de_perdas_faturamento) %>% 
+  tm_shape() +
+  tm_style(
+    "beaver",
+    legend.format = 
+      list(fun = function(x) formatC(round(x, 1),
+                                     big.mark = '.', decimal.mark = ','),
+           text.separator = " a ")
+  ) +
+  tm_fill(
+    'Índice de perdas',
+    palette = 'Blues',
+    style = 'quantile',
+    n = 6,
+    alpha = 1,
+    id = "municipio_clean",
+    textNA = "Sem dados",
+    colorNA = '#fff7bc'
+  ) +
+  tm_layout(main.title = 
+              'Índice de perdas de faturamento (água) - Municípios paulistas') +
+  custom_map_settings ; mapa_perdas
+
+# Saving
+tmap_save(mapa_perdas,  height = 6, width = 6,
+          filename = 'plots/agua/mapa-perdas.png')
+
+# Boxplot perdas --------------------------------------------------------------
+snis_boxplot_perdas <- snis_agua %>% 
+  filter(nat_jur_simplified != 'Sem dados') %>% 
+  mutate(nat_jur_simplified = droplevels(nat_jur_simplified) %>% 
+           fct_reorder(.x = in013_indice_de_perdas_faturamento,
+                       .fun = median, na.rm = TRUE))
+
+summary_table_perdas <- snis_boxplot_perdas %>% 
+  group_by(nat_jur_simplified) %>% 
+  summarise(Mediana = median(in013_indice_de_perdas_faturamento,
+                             na.rm = TRUE)) %>% 
+  mutate(Label = round(Mediana, 2) %>% str_replace('\\.', ','))
+
+# Plotting
+boxplot_perdas <- ggplot(snis_boxplot_perdas) +
+  geom_flat_violin(aes(x = nat_jur_simplified,
+                       y = in013_indice_de_perdas_faturamento,
+                       fill = nat_jur_simplified),
+                   alpha = 0.5) +
+  geom_boxplot(aes(x = nat_jur_simplified,
+                   y = in013_indice_de_perdas_faturamento),
+               width = 0.1, outlier.alpha = 0.3) +
+  geom_text(data = summary_table_perdas,
+            aes(x = nat_jur_simplified,
+                y = Mediana, label = Label),
+            size = 3, nudge_x = 0.17, family = 'serif') +
+  scale_x_discrete(labels = c('Soc. de Econ. Mista',
+                              'Empresa Privada',
+                              'Adm. Pública')) +
+  scale_fill_manual(values = c('#fed976', '#225ea8', '#fb6a4a')) +
+  theme(legend.position = 'none', panel.grid = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(
+    x = 'Tipo de prestador de serviços',
+    y = 'Índice de perdas (faturamento)',
+    title = 'Distribuição do índice de perdas - Municípios paulistas',
+    subtitle = 'Comparação entre diferentes tipos de prestadores de serviços'
+  ) ; boxplot_perdas
+
+# Saving
+ggsave(plot = boxplot_perdas, width = 5, height = 5.5,
+       filename = 'plots/agua/boxplot-perdas.png')

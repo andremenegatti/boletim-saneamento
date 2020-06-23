@@ -2,7 +2,7 @@ library(tidyverse)
 library(cagedExplorer)
 
 # Reading full dataset --------------------------------------------------------
-snis <- readxl::read_excel('snis-sp-desagregado-2018.xlsx', range = 'A1:HY622')
+snis <- readxl::read_excel('data/snis-sp-desagregado-2018.xlsx', range = 'A1:HY622')
 colnames(snis) <- tolower(colnames(snis))
 
 # Keeping relevant features only ----------------------------------------------
@@ -143,4 +143,4 @@ snis7 <- snis6 %>%
             by = c('municipio_clean', 'tipo_servico'))
 
 # Saving ----------------------------------------------------------------------
-saveRDS(snis7, 'snis-2018-clean.rds')
+saveRDS(snis7, 'data/snis-2018-clean.rds')

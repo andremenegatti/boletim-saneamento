@@ -1,0 +1,16 @@
+"ranking","municipio","score","tipo_prestador","populacao","atendimento","coleta","tratamento","tarifa_agua","tarifa_esgoto","perdas","inv_per_capita","desempenho"
+77,"São José do Rio Preto",59.08,"Administração pública",450657,95.81,89.03,89.03,2.19,2.19,10.52,105.07,130.67
+94,"Franca",58.74,"Soc. de Econ. Mista com Adm. Pública",347237,100,98.66,98.66,3,2.76,10.81,95.74,103.63
+104,"Araçatuba",58.61,"Empresa privada",194874,98.07,100,100,2.38,2.3,24.76,139.41,107.46
+113,"Santos",58.45,"Soc. de Econ. Mista com Adm. Pública",434742,100,97.64,97.64,3.92,3.98,6.99,46.52,143.74
+164,"Presidente Prudente",57.18,"Soc. de Econ. Mista com Adm. Pública",225271,100,100,100,3.14,2.97,17.77,42.34,104.21
+279,"Registro",54.23,"Soc. de Econ. Mista com Adm. Pública",56430,96.49,91.44,91.44,3.45,3.5,15.14,49.8,101.3
+284,"Sorocaba",54.05,"Administração pública",659871,98.49,84.76,82.42,3.53,4.12,31.08,88.91,182.46
+290,"São José dos Campos",53.92,"Soc. de Econ. Mista com Adm. Pública",703219,100,94.16,94.15,3.03,2.81,29.32,22.36,103.71
+311,"Ribeirão Preto",53.5,"Administração pública",682302,99.19,100,99.03,3.07,3.66,55.05,4.69,160.1
+336,"Barretos",52.37,"Administração pública",120638,100,99.5,99.5,3.58,2.58,35.13,16.01,89.79
+378,"Itapeva",50.45,"Soc. de Econ. Mista com Adm. Pública",93570,92.06,82.04,79.93,2.91,2.63,27.42,36.62,105.87
+433,"São Paulo",47.94,"Soc. de Econ. Mista com Adm. Pública",12106920,99.3,74.23,64.66,4.2,4.3,23.95,142.59,124.65
+467,"Campinas",46.21,"Soc. de Econ. Mista com Adm. Pública",1182429,98.09,79.58,70.32,5.63,6.38,12.95,77.22,107.53
+570,"Marília",37.79,"Administração pública",235234,99.28,80,4.12,2.3,1.78,51.53,15.68,80.79
+571,"Bauru",37.73,"Administração pública",371690,98.28,64.61,1.77,3.35,4.66,46.63,21.86,161.64

@@ -4,12 +4,14 @@ library(cagedExplorer)
 source('geom_flat_violin.R')
 
 # Loading and filtering dataset -----------------------------------------------
-snis <- readRDS('snis-2018-clean.rds')
+snis <- readRDS('data/snis-2018-clean.rds')
 
 snis_esgoto <- snis %>% 
   filter(!(municipio_clean %in% 
              c('MAUA', 'SALTO', 'SANTA MARIA DA SERRA') &
              tipo_servico == 'Água'))
+
+# saveRDS(snis_esgoto, 'data/snis-esgoto.rds')
 
 # Custom map theme and settings -----------------------------------------------
 theme_set(custom_theme())
