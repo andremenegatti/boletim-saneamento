@@ -11,7 +11,8 @@ snis2 <- snis %>%
     codigo_municipio, prestador, sigla_prestador, tipo_servico,
     natureza_juridica, starts_with('pop_'),
     starts_with('ag001_'), starts_with('ag026_'),
-    starts_with('es001_'), starts_with('fn_017_'),
+    starts_with('es001_'), starts_with('es026_'),
+    starts_with('fn_017_'),
     # Investimentos prestador de serviços
     starts_with('fn023'), starts_with('fn024'),
     starts_with('fn025'), starts_with('fn033'),
@@ -64,11 +65,11 @@ snis4 <- snis3 %>%
 
 # Joining population and GDP data ---------------------------------------------
 snis5 <- snis4 %>% 
-  left_join(readxl::read_excel('pib-municipios-2017.xlsx') %>% 
+  left_join(readxl::read_excel('data/pib-municipios-2017.xlsx') %>% 
               select(Codmun7 = codigo, pib2017 = pib) %>% 
               mutate(Codmun7 = as.integer(Codmun7)),
             by = 'Codmun7') %>% 
-  left_join(readxl::read_excel('estimativa-populacao-municipios-2017.xlsx') %>%
+  left_join(readxl::read_excel('data/estimativa-populacao-municipios-2017.xlsx') %>%
               select(Codmun7, pop2017) %>% 
               mutate(Codmun7 = as.integer(Codmun7)),
             by = 'Codmun7') %>% 
