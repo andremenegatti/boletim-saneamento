@@ -9,7 +9,8 @@ snis_agua <- readRDS('data/snis-agua.rds')
 
 snis <- snis_agua %>% 
   select(municipio, municipio_clean, regiao_governo, regiao_administrativa,
-         pop2017,
+         pib2017,
+         pib_per_capita2017,
          tipo_prestador = nat_jur_simplified,
          populacao = pop2017, inv_per_capita,
          tarifa_agua = in004_tarifa_media_praticada,
@@ -28,31 +29,67 @@ snis <- snis_agua %>%
     by = 'municipio_clean'
     )
 
+# Function to normalize variables
+minmax_norm <- function(x, reverse = FALSE,
+                        scale_to_100 = TRUE) {
+  if (reverse) numerator <- max(x) - x
+  if (!reverse) numerator <- x - min(x)
+  denominator <- max(x) - min(x)
+  x_norm <- numerator / denominator
+  if (scale_to_100) x_norm <-  x_norm * 100
+  x_norm
+}
+
+# Computing overall score
 snis_ranking <- snis %>% 
   drop_na() %>% 
   select(-municipio_clean) %>% 
   mutate(perdas = ifelse(perdas > 0, perdas, 0)) %>% # <----
+  mutate(sqrt_inv_per_capita = sqrt(inv_per_capita)) %>% 
   mutate(
-    tarifa_agua_norm = (max(tarifa_agua) - tarifa_agua) / 
-      (max(tarifa_agua) - min(tarifa_agua)) * 100,
-    tarifa_esgoto_norm = (max(tarifa_esgoto) - tarifa_esgoto) /
-      (max(tarifa_esgoto) - min(tarifa_esgoto) * 100),
-    inv_per_capita_norm = (inv_per_capita - min(inv_per_capita)) /
-      (max(inv_per_capita) - min(inv_per_capita)) * 100,
-    # log_inv = log(inv_per_capita + 1e-4),
-    # log_inv_norm = (log_inv - min(log_inv)) /
-    #    (max(log_inv) - min(log_inv)) * 100,
-    perdas_norm = (max(perdas) - perdas) /
-      (max(perdas) - min(perdas)) * 100,
-    desempenho_norm = (desempenho - min(desempenho)) / 
-      (max(desempenho) - min(desempenho)) * 100,
+    tarifa_agua_norm = minmax_norm(tarifa_agua, reverse = TRUE),
+    tarifa_esgoto_norm = minmax_norm(tarifa_esgoto, reverse = TRUE),
+    inv_per_capita_norm = minmax_norm(inv_per_capita),
+    sqrt_inv_per_capita_norm = minmax_norm(sqrt_inv_per_capita),
+    perdas_norm = minmax_norm(perdas, reverse = TRUE),
+    desempenho_norm = minmax_norm(desempenho),
     # Score as average of normalized indicators
     score = (atendimento + coleta + tratamento +
               tarifa_agua_norm + tarifa_esgoto_norm +
-              inv_per_capita_norm + perdas_norm + desempenho_norm) / 8
+              sqrt_inv_per_capita_norm + perdas_norm +
+               desempenho_norm) / 8
 ) %>% 
   mutate(ranking = dense_rank(desc(score))) %>% 
   arrange(ranking)
+
+# Saving results in csv files
+municipios_sp %>% 
+  select(municipio, municipio_clean, Codmun7) %>% 
+  left_join(snis_ranking %>% 
+              select(-municipio),
+            by = 'Codmun7') %>% 
+  select(municipio, regiao_administrativa, regiao_governo,
+         populacao2017 = populacao, pib2017, pib_per_capita2017,
+         score, ranking,
+         tarifa_agua, tarifa_esgoto,
+         atendimento, coleta, tratamento,
+         inv_per_capita, perdas, desempenho) %>% 
+  arrange(ranking) %>% 
+  write_excel_csv2('ranking-saneamento-sp-variaveis-nao-normalizadas.csv')
+
+municipios_sp %>% 
+  select(municipio, municipio_clean, Codmun7) %>% 
+  left_join(snis_ranking %>% 
+              select(-municipio),
+            by = 'Codmun7') %>% 
+  select(municipio, regiao_administrativa, regiao_governo,
+         populacao2017 = populacao, pib2017, pib_per_capita2017,
+         score, ranking,
+         tarifa_agua_norm, tarifa_esgoto_norm,
+         atendimento, coleta, tratamento,
+         sqrt_inv_per_capita_norm, perdas_norm, desempenho_norm) %>% 
+  arrange(ranking) %>% 
+  write_excel_csv2('ranking-saneamento-sp-variaveis-normalizadas.csv')
 
 snis_ranking %>% 
   select(-Codmun7) %>% 
@@ -63,12 +100,6 @@ snis_ranking %>%
   select(-Codmun7) %>% 
   select(ranking, municipio, score, regiao_governo:desempenho_norm) %>% 
   write.csv('ranking/snis_ranking.csv', row.names = FALSE)
-
-# snis_ranking %>%
-#   select(ranking, municipio, score, populacao,
-#          atendimento, coleta, tratamento,
-#          tarifa_agua, tarifa_esgoto, perdas, inv_per_capita_norm , desempenho_norm) %>% 
-#   View()
 
 # Table with top 10 and worst 10 cities with at least 50k habitants -----------
 snis_ranking_50k <- snis_ranking %>% 
@@ -156,7 +187,7 @@ hist_ranking <- snis_ranking %>%
   ) +
   theme(panel.grid = element_blank(),
         legend.title = element_blank(),
-        legend.position = c(.2, .85)) +
+        legend.position = c(.15, .875)) +
   scale_fill_manual(
     values = c('#fed976', '#fb6a4a', '#225ea8'),
     labels = c('Sociedade de economia mista',
@@ -173,7 +204,7 @@ hist_ranking <- snis_ranking %>%
 hist_ranking
 
 # Saving
-ggsave(plot = hist_ranking, width = 6.5, height = 5,
+ggsave(plot = hist_ranking, width = 7.5, height = 5.5,
        filename = 'plots/histogram-ranking-agua-esgoto.png')
 
 
@@ -229,3 +260,22 @@ mapa_ranking <- municipios_sp %>%
 # Saving
 tmap_save(mapa_ranking, width = 6, height = 6,
           filename = 'plots/mapa-ranking.png')
+
+
+# Checking investment distributions
+snis_ranking %>% 
+  select(municipio, inv_per_capita_norm, sqrt_inv_per_capita_norm) %>% 
+  pivot_longer(cols = -municipio) %>% 
+  mutate(name = ifelse(name == 'inv_per_capita_norm', 'MinMax', 'MinMax da raiz quadrada')) %>% 
+  ggplot() +
+  geom_histogram(aes(x = value)) +
+  theme(panel.grid = element_blank()) +
+  labs(x = 'Investimento per capita (normalizado de 0 a 100)',
+       y = 'Número de municípios',
+       title = 'Distribuição do investimento per capita',
+       subtitle = 'Comparação entre diferentes métodos de normalização') +
+  facet_wrap(~ name, nrow = 1)
+
+ggsave(filename = 'histogramas-inv-per-capita-comparacao-normalizacao.png',
+       width = 5, height = 4)
+
